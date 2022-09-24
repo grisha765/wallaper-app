@@ -1,10 +1,11 @@
 debug = True # для разработчика
 # импортирование модулей
 import os
+import subprocess
 try:
     import requests
     from bs4 import BeautifulSoup
-    if debug == True: print("[Debug] Modules import") # debug
+    #print("[Debug] Modules import") # debug
 except:
     print("Dependencies no found! Install dependencies? \nYes or No:")
     answer = input(">>")
@@ -14,28 +15,36 @@ except:
     if answer == "No":
         print("Good Bye!")
         exit()
+from urllib.request import urlretrieve
 import platform
 import configparser
 import re
+import random
+import ctypes
 
 def add_config(): # создание конфига
-    print("[Debug] Detect OS: " + platform.system()) # debug
-    if platform.system() == 'Linux':
-        if debug == False: path_app = sp.getoutput("echo ~") + "/.config/nature-wallapers-app/"
-        if debug == False: os.mkdir(f'{path_app}')
-        if debug == True: path_app = "/home/grisha/Projects/python/wallapers_app2/" # debug
-        if debug == True: print(f"[Debug] You path for app: {path_app}") # debug
+    #print("[Debug] Detect OS: " + platform.system()) # debug
+    global path_app
+    #if platform.system() == 'Linux':
+        #path_app = subprocess.getoutput("echo ~") + "/.config/nature-wallapers-app/"
+        #os.mkdir(f'{path_app}')
+    if platform.system() == 'Windows':
+        path_app = subprocess.getoutput("powershell.exe $HOME") + "\AppData\Local\wallapers-app\\" # путь для конфига
+        if os.path.exists(f"{path_app}") == False:
+            os.mkdir(f"{path_app}")
     if os.path.exists(f"{path_app}config_wallapers.ini") == False:
-        config_text_size = "#Choose your size:\n#240x320, 240x400, 320x240, 320x480, 360x640\n#480x800, 480x854, 540x960, 720x1280, 800x600\n#800x1280, 960x544, 1024x600, 1080x1920, 2160x3840\n#1366x768, 1440x2560, 800x1200, 800x1420, 938x1668\n#1280x1280, 1350x2400, 2780x2780, 3415x3415, 1024x768\n#1152x864, 1280x960, 1400x1050, 1600x1200, 1280x1024\n#1280x720, 1280x800, 1440x900, 1680x1050, 1920x1200\n#2560x1600, 1600x900, 2560x1440, 1920x1080, 2048x1152\n#2560x1024, 2560x1080"
-        config_text_category = "#Choose your category:\n#3d, abstraction, anime, art, vector, cities\n#food, animals, space, love, macro, cars\n#minimalism, motorcycles, music, holidays, nature, miscellaneous\n#words, smilies, sport, textures, dark, technology\n#fantasy, flowers, black"
-        config_choose_size = input(f"{config_text_size}"+"\n>>")
-        config_choose_category = input(f"{config_text_category}"+"\n>>")
+        config_text_size = "# Choose your size:\n# 240x320, 240x400, 320x240, 320x480, 360x640\n# 480x800, 480x854, 540x960, 720x1280, 800x600\n# 800x1280, 960x544, 1024x600, 1080x1920, 2160x3840\n# 1366x768, 1440x2560, 800x1200, 800x1420, 938x1668\n# 1280x1280, 1350x2400, 2780x2780, 3415x3415, 1024x768\n# 1152x864, 1280x960, 1400x1050, 1600x1200, 1280x1024\n# 1280x720, 1280x800, 1440x900, 1680x1050, 1920x1200\n# 2560x1600, 1600x900, 2560x1440, 1920x1080, 2048x1152\n# 2560x1024, 2560x1080"
+        config_text_category = "# Choose your category:\n# 3d, abstraction, anime, art, vector, cities\n# food, animals, space, love, macro, cars\n# minimalism, motorcycles, music, holidays, nature, miscellaneous\n# words, smilies, sport, textures, dark, technology\n# fantasy, flowers, black"
+        config_choose_size = input(f"{config_text_size}"+"\nChoose your size >> ")
+        config_choose_category = input(f"{config_text_category}"+"\nChoose your category >> ")
         config_write = f"{config_text_size}\n\n{config_text_category}\n\n[Config]\nsize = {config_choose_size}\ncategory = {config_choose_category}"
-        if debug == True: print(f"[Debug] Config write:\n{config_write}") # debug
-        if debug == False: config = open(f"{path_app}config_wallapers.ini","w")
-        if debug == False: config.write(config_write)
+        config = open(f"{path_app}config_wallapers.ini","w")
+        config.write(config_write)
+        print(f"The setup is completed on the path '{path_app}', restart the utility.")
+        exit()
     config_parser = configparser.ConfigParser()
     config_parser.read(f"{path_app}config_wallapers.ini")
+    global size
     size = config_parser["Config"]["size"]
     global category
     category = config_parser["Config"]["category"]
@@ -51,11 +60,31 @@ def parsing_pages(html): # получение страниц сайта
     for name in pages_names:
         href0 = name.get("href")
         href1 = re.sub(f"/catalog/{category}/page","",href0)
-        if debug == True: print(f"[Debug] page in site: {href1}") # debug
+        #print(href1)
+    site_number = random.randint(1, int(href1)) # рандом страниц от 1 до максимума
+    #print(site_number)
+    return site_number
 
-def parsing_wallapers(html): # получение ссылок на обои
-    pass
+def parsing_wallapers(html, site_number): # получение обоев
+    list0 = []
+    soup = BeautifulSoup(html, "lxml")
+    wallpapers_link = soup.find_all('a', class_='wallpapers__link')
+    for name in wallpapers_link:
+        href0 = name.get("href")
+        href1 = re.sub("wallpaper/","",href0)
+        href2 = "https://images.wallpaperscraft.ru/image/single" + href1 + f"_{size}.jpg"
+        list0.append(href2) # вносим ссылки на обои в список
+    link = random.choice(list0) # выбор обоев из списка
+    return link
+
+def set_wallaper(link, path): # скачивание и установка обоев
+    set0 = f"{path}wallaper.png"
+    urlretrieve(f"{link}", f"{path}wallaper.png") # скачивание обоев
+    if platform.system() == 'Windows': # установка обоев
+        cs = ctypes.c_buffer(set0.encode())
+        SPI_SETDESKWALLPAPER = 0x14
+        ctypes.windll.user32.SystemParametersInfoA(20, 0, cs, 3)
 
 if __name__ == '__main__':
     add_config()
-    parsing_pages(html_get(category, ""))
+    set_wallaper(parsing_wallapers(html_get(category, ""), parsing_pages(html_get(category, ""))), path_app) # запуск
