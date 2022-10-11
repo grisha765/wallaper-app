@@ -1,4 +1,3 @@
-debug = True # для разработчика
 # импортирование модулей
 import os
 import subprocess
@@ -50,7 +49,7 @@ def add_config(): # создание конфига
     category = config_parser["Config"]["category"]
 
 def html_get(category, page): # получение html документа
-    url = f"https://wallpaperscraft.ru/catalog/{category}/{page}"
+    url = f"https://wallpaperscraft.ru/catalog/{category}/page{page}"
     html = requests.get(url).text
     return html
 
@@ -65,7 +64,8 @@ def parsing_pages(html): # получение страниц сайта
     #print(site_number)
     return site_number
 
-def parsing_wallapers(html, site_number): # получение обоев
+def parsing_wallapers(html): # получение обоев
+    #print(html)
     list0 = []
     soup = BeautifulSoup(html, "lxml")
     wallpapers_link = soup.find_all('a', class_='wallpapers__link')
@@ -74,6 +74,7 @@ def parsing_wallapers(html, site_number): # получение обоев
         href1 = re.sub("wallpaper/","",href0)
         href2 = "https://images.wallpaperscraft.ru/image/single" + href1 + f"_{size}.jpg"
         list0.append(href2) # вносим ссылки на обои в список
+    #print(list0)
     link = random.choice(list0) # выбор обоев из списка
     return link
 
@@ -87,4 +88,4 @@ def set_wallaper(link, path): # скачивание и установка об�
 
 if __name__ == '__main__':
     add_config()
-    set_wallaper(parsing_wallapers(html_get(category, ""), parsing_pages(html_get(category, ""))), path_app) # запуск
+    set_wallaper(parsing_wallapers(html_get(category, parsing_pages(html_get(category, 1)))), path_app) # запуск
