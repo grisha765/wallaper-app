@@ -24,9 +24,10 @@ import ctypes
 def add_config(): # создание конфига
     #print("[Debug] Detect OS: " + platform.system()) # debug
     global path_app
-    #if platform.system() == 'Linux':
-        #path_app = subprocess.getoutput("echo ~") + "/.config/nature-wallapers-app/"
-        #os.mkdir(f'{path_app}')
+    if platform.system() == 'Linux':
+        path_app = subprocess.getoutput("echo ~") + "/.config/wallapers-app/"
+        if os.path.exists(f"{path_app}") == False:
+            os.mkdir(f"{path_app}")
     if platform.system() == 'Windows':
         path_app = subprocess.getoutput("powershell.exe $HOME") + "\AppData\Local\wallapers-app\\" # путь для конфига
         if os.path.exists(f"{path_app}") == False:
@@ -81,11 +82,13 @@ def parsing_wallapers(html): # получение обоев
 def set_wallaper(link, path): # скачивание и установка обоев
     set0 = f"{path}wallaper.png"
     urlretrieve(f"{link}", f"{path}wallaper.png") # скачивание обоев
-    if platform.system() == 'Windows': # установка обоев
-        cs = ctypes.c_buffer(set0.encode())
+    if platform.system() == 'Windows': # установка обоев windows с помощью ctypes
+        cs = ctypes.c_buffer(set0.encode()) # местонахождение обоев
         SPI_SETDESKWALLPAPER = 0x14
         ctypes.windll.user32.SystemParametersInfoA(20, 0, cs, 3)
-
+    if platform.system() == 'Linux': # установка обоев linux с помощью утилиты feh
+        cs = f"{path}" # местонахождение обоев
+        subprocess.call (f'feh --bg-scale {cs}/wallaper.png', shell=True)
 if __name__ == '__main__':
     add_config()
     set_wallaper(parsing_wallapers(html_get(category, parsing_pages(html_get(category, 1)))), path_app) # запуск
