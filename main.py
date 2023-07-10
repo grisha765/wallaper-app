@@ -1,37 +1,40 @@
-# импортирование модулей
 import os
+import re
 import subprocess
+import platform
+os_type = platform.system()
+if os_type == 'Linux':
+    path_app = subprocess.getoutput("echo ~") + "/.config/wallapers-app/"
+    help_venv = f'{path_app}venv/bin/python'
+if os_type == 'Windows':
+    path_app = subprocess.getoutput("powershell.exe $HOME") + "\AppData\Local\wallapers-app\\"
+    help_venv = f'{path_app}venv\\bin\python\\'
 try:
     import requests
     from bs4 import BeautifulSoup
-    #print("[Debug] Modules import") # debug
 except:
+    if os.path.exists(f"{path_app}venv") == True:
+        print(f"Run through: {help_venv} main.py")
+        exit()
     print("Dependencies no found! Install dependencies? \nYes or No:")
-    answer = input(">>")
+    answer = input(">> ")
     if answer == "Yes":
-        os.system('pip install requests beautifulsoup4 lxml')
-        print("Restart the utility.")
+        create_venv_cmd = ['python', '-m', 'venv', f'{path_app}venv']
+        subprocess.run(create_venv_cmd, check=True)
+        os.system(f'{path_app}venv/bin/pip install requests beautifulsoup4 lxml')
+        print(f"Restart the utility. Please run via: {help_venv} main.py")
+        exit()
     if answer == "No":
         print("Good Bye!")
         exit()
 from urllib.request import urlretrieve
-import platform
 import configparser
-import re
 import random
 import ctypes
 
 def add_config(): # создание конфига
-    #print("[Debug] Detect OS: " + platform.system()) # debug
-    global path_app
-    if platform.system() == 'Linux':
-        path_app = subprocess.getoutput("echo ~") + "/.config/wallapers-app/"
-        if os.path.exists(f"{path_app}") == False:
-            os.mkdir(f"{path_app}")
-    if platform.system() == 'Windows':
-        path_app = subprocess.getoutput("powershell.exe $HOME") + "\AppData\Local\wallapers-app\\" # путь для конфига
-        if os.path.exists(f"{path_app}") == False:
-            os.mkdir(f"{path_app}")
+    if os.path.exists(f"{path_app}") == False:
+        os.mkdir(f"{path_app}")
     if os.path.exists(f"{path_app}config_wallapers.ini") == False:
         config_text_size = "# Choose your size:\n# 240x320, 240x400, 320x240, 320x480, 360x640\n# 480x800, 480x854, 540x960, 720x1280, 800x600\n# 800x1280, 960x544, 1024x600, 1080x1920, 2160x3840\n# 1366x768, 1440x2560, 800x1200, 800x1420, 938x1668\n# 1280x1280, 1350x2400, 2780x2780, 3415x3415, 1024x768\n# 1152x864, 1280x960, 1400x1050, 1600x1200, 1280x1024\n# 1280x720, 1280x800, 1440x900, 1680x1050, 1920x1200\n# 2560x1600, 1600x900, 2560x1440, 1920x1080, 2048x1152\n# 2560x1024, 2560x1080"
         config_text_category = "# Choose your category:\n# 3d, abstraction, anime, art, vector, cities\n# food, animals, space, love, macro, cars\n# minimalism, motorcycles, music, holidays, nature, miscellaneous\n# words, smilies, sport, textures, dark, technology\n# fantasy, flowers, black"
@@ -60,13 +63,10 @@ def parsing_pages(html): # получение страниц сайта
     for name in pages_names:
         href0 = name.get("href")
         href1 = re.sub(f"/catalog/{category}/page","",href0)
-        #print(href1)
     site_number = random.randint(1, int(href1)) # рандом страниц от 1 до максимума
-    #print(site_number)
     return site_number
 
 def parsing_wallapers(html): # получение обоев
-    #print(html)
     list0 = []
     soup = BeautifulSoup(html, "lxml")
     wallpapers_link = soup.find_all('a', class_='wallpapers__link')
@@ -75,7 +75,6 @@ def parsing_wallapers(html): # получение обоев
         href1 = re.sub("wallpaper/","",href0)
         href2 = "https://images.wallpaperscraft.ru/image/single" + href1 + f"_{size}.jpg"
         list0.append(href2) # вносим ссылки на обои в список
-    #print(list0)
     link = random.choice(list0) # выбор обоев из списка
     return link
 
